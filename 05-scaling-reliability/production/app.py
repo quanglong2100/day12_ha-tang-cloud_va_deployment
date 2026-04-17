@@ -32,17 +32,19 @@ import uvicorn
 from utils.mock_llm import ask
 
 # ── Redis (optional — fallback to in-memory dict nếu không có Redis)
+# Sửa đoạn này ở đầu file app.py
 try:
     import redis
-    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    # Đảm bảo lấy REDIS_URL từ env, nếu không có mới dùng localhost
+    REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0") 
     _redis = redis.from_url(REDIS_URL, decode_responses=True)
     _redis.ping()
     USE_REDIS = True
-    print("✅ Connected to Redis")
-except Exception:
+    print(f"✅ Connected to Redis at {REDIS_URL}")
+except Exception as e:
     USE_REDIS = False
     _memory_store: dict = {}
-    print("⚠️  Redis not available — using in-memory store (not scalable!)")
+    print(f"⚠️ Redis not available ({e}) — using in-memory store")
 
 
 logging.basicConfig(level=logging.INFO)
@@ -217,4 +219,5 @@ def ready():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port, reload=True)
+    # Trong Docker không nên dùng reload=True và phải dùng dạng string "app:app"
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
